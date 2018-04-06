@@ -3,7 +3,6 @@ from leader import Leader
 from message import Message
 
 class Candidate(Voter):
-
     def set_server(self, server):
         self._server = server
         self._votes = {}
@@ -16,9 +15,10 @@ class Candidate(Voter):
         if message.sender not in self._votes:
             self._votes[message.sender] = message
 
-            if(len(self._votes.keys()) > (self._server._total_nodes - 1) / 2):
+            if(len(self._votes.keys()) > (self._server._total_nodes - 1) / 2) :
                 leader = Leader()
                 leader.set_server(self._server)
+                print "Leader is now server", self._server._name
 
                 return leader, None
         return self, None

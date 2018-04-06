@@ -1,5 +1,4 @@
 import unittest
-from memory_board import MemoryBoard
 from message import Message
 from server import Server
 from follower import Follower
@@ -7,26 +6,23 @@ from candidate import Candidate
 from leader import Leader
 
 class TestLeaderServer( unittest.TestCase ):
-
-	def setUp( self ):
+	def setUp(self):
 		followers = []
-		for i in range( 1, 4 ):
-			board = MemoryBoard()
+		for i in range(1, 4):
 			state = Follower()
-			followers.append( Server( i, state, [], board, [] ) )
+			followers.append( Server( i, state, [], [] ) )
 
-		board = MemoryBoard()
 		state = Leader()
-		self.leader = Server( 0, state, [], board, followers )
+		self.leader = Server( 0, state, [], followers )
 		for i in followers:
-			i._neighbors.append( self.leader )
+			i._neighbors.append(self.leader)
 
-	def _perform_hearbeat( self ):
+	def _perform_hearbeat(self):
 		self.leader._state._send_heart_beat()
 		for i in self.leader._neighbors:
-			i.on_message( i._messageBoard.get_message() )
+			i.on_message(i.get_message())
 
-		for i in self.leader._messageBoard._board:
+		for i in self.leader._board:
 			self.leader.on_message( i )
 
 	def test_leader_server_sends_heartbeat_to_all_neighbors( self ):
@@ -43,7 +39,7 @@ class TestLeaderServer( unittest.TestCase ):
 
 		self.leader.send_message( msg )
 		for i in self.leader._neighbors:
-			i.on_message( i._messageBoard.get_message() )
+			i.on_message( i.get_message() )
 		for i in self.leader._neighbors:
 			self.assertEquals( [{ "term": 1, "value": 100 } ], i._log )
 
@@ -62,6 +58,6 @@ class TestLeaderServer( unittest.TestCase ):
 
 		self.leader.send_message( msg )
 		for i in self.leader._neighbors:
-			i.on_message( i._messageBoard.get_message() )
+			i.on_message( i.get_message() )
 		for i in self.leader._neighbors:
 			self.assertEquals( [{ "term": 1, "value": 100 } ], i._log )

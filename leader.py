@@ -3,13 +3,12 @@ from state import State
 from message import Message
 
 class Leader(State):
-
     def __init__(self):
         self._nextIndexes = defaultdict(int)
         self._matchIndex = defaultdict(int)
 
-    def set_sever(self, server):
-        self._sever = server
+    def set_server(self, server):
+        self._server = server
         self._send_heart_beat()
 
         for n in self._server._neighbors:
@@ -62,5 +61,5 @@ class Leader(State):
                 "prevLogTerm": self._server._lastLogTerm,
                 "entries": [],
                 "leaderCommit": self._server._commitIndex,
-            }, 0)
+            }, Message.AppendEntries)
         self._server.send_message(message)

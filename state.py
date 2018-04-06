@@ -3,7 +3,6 @@ import random
 from message import Message
 
 class State(object):
-
     def set_server(self, server):
         self._server = server
 

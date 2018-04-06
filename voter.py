@@ -20,5 +20,5 @@ class Voter(State):
             self._server._name,
             msg.sender,
             msg.term,
-            {"response": yes}, 2)
+            {"response": yes}, Message.RequestVoteResponse)
         self._server.send_message_response(voteResponse)
