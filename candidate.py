@@ -1,3 +1,5 @@
+import time
+from variables import *
 from voter import Voter
 from leader import Leader
 from message import Message
@@ -12,15 +14,21 @@ class Candidate(Voter):
         return self, None
 
     def on_vote_received(self, message):
-        if message.sender not in self._votes:
-            self._votes[message.sender] = message
+        self._votes[message.sender] = message
 
-            if(len(self._votes.keys()) > (self._server._total_nodes - 1) / 2) :
-                leader = Leader()
-                leader.set_server(self._server)
-                print "Leader is now server", self._server._name
+        print "Total nodes = ", self._server._total_nodes
+        print "Total votes = ", len(self._votes.keys())
 
-                return leader, None
+        if(len(self._votes.keys()) > (self._server._total_nodes - 1) / 2):
+            leader = Leader()
+            leader.set_server(self._server)
+            print "Server", self._server._name, "has been elected leader"
+            self._server._serverState = leaderState
+            for n in self._server._neighbors:
+                if n._serverState != deadState:
+                    n._serverState = followerState
+            return leader, None
+
         return self, None
 
     def _start_election(self):
@@ -32,7 +40,7 @@ class Candidate(Voter):
             {
                 "lastLogIndex": self._server._lastLogIndex,
                 "lastLogTerm": self._server._lastLogTerm,
-            }, 1)
+            }, Message.RequestVote)
 
         self._server.send_message(election)
         self._last_vote = self._server._name

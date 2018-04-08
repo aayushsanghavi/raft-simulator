@@ -9,13 +9,12 @@ class Leader(State):
 
     def set_server(self, server):
         self._server = server
-        self._send_heart_beat()
 
         for n in self._server._neighbors:
             self._nextIndexes[n._name] = self._server._lastLogIndex + 1
             self._matchIndex[n._name] = 0
 
-    def on_response_received(self, message):
+    def on_response_received(self, message):    
         # Was the last AppendEntries good?
         if(not message.data["response"]):
             # No, so lets back up the log for this node
@@ -37,7 +36,7 @@ class Leader(State):
                     "prevLogTerm": previous["term"],
                     "entries": [current],
                     "leaderCommit": self._server._commitIndex,
-                }, 0)
+                }, Message.AppendEntries)
 
             self._send_response_message(appendEntry)
         else:
