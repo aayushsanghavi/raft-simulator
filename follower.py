@@ -7,6 +7,7 @@ class Follower(Voter):
         self._timeoutTime = self._nextTimeout()
 
     def on_append_entries(self, message):
+        print message._data
         self._timeoutTime = self._nextTimeout()
 
         if message.term < self._server._currentTerm:
@@ -18,11 +19,10 @@ class Follower(Voter):
             data = message.data
 
             # Check if the leader is too far ahead in the log.
-            if(data["leaderCommit"] != self._server._commitIndex):
+            if data["leaderCommit"] != self._server._commitIndex:
                 # If the leader is too far ahead then we
                 #   use the length of the log - 1
-                self._server._commitIndex = min(data["leaderCommit"],
-                                                len(log) - 1)
+                self._server._commitIndex = min(data["leaderCommit"], len(log) - 1)
 
             # Can't possibly be up-to-date with the log
             # If the log is smaller than the preLogIndex
@@ -58,6 +58,7 @@ class Follower(Voter):
                     for e in data["entries"]:
                         log.append(e)
                         self._server._commitIndex += 1
+                    print log
 
                     self._send_response_message(message)
                     self._server._lastLogIndex = len(log) - 1
@@ -73,6 +74,7 @@ class Follower(Voter):
                         for e in data["entries"]:
                             log.append(e)
                             self._server._commitIndex += 1
+                        print log
 
                         self._server._lastLogIndex = len(log) - 1
                         self._server._lastLogTerm = log[-1]["term"]

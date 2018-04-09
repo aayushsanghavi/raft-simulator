@@ -2,6 +2,7 @@ import time
 from variables import *
 from voter import Voter
 from leader import Leader
+from follower import Follower
 from message import Message
 
 class Candidate(Voter):
@@ -16,8 +17,8 @@ class Candidate(Voter):
     def on_vote_received(self, message):
         self._votes[message.sender] = message
 
-        print "Total nodes = ", self._server._total_nodes
-        print "Total votes = ", len(self._votes.keys())
+        # print "Total nodes = ", self._server._total_nodes
+        # print "Total votes = ", len(self._votes.keys())
 
         if(len(self._votes.keys()) > (self._server._total_nodes - 1) / 2):
             leader = Leader()
@@ -27,6 +28,8 @@ class Candidate(Voter):
             for n in self._server._neighbors:
                 if n._serverState != deadState:
                     n._serverState = followerState
+                    n._state = Follower()
+                    n._state.set_server(n)
             return leader, None
 
         return self, None

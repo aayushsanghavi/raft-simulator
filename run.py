@@ -13,7 +13,7 @@ available_id = 0
 
 def checkMesages():
     while(True):
-        time.sleep(0.01)
+        time.sleep(0.0001)
         for name in config:
             if config[name]["object"]._serverState != deadState:
                 while(True):
@@ -37,7 +37,7 @@ def serverFunction(name):
             print "Killed server with name ", name
             return
         if config[name]["object"]._serverState == candidateState and type(config[name]["object"]._state) != Candidate:
-            timeout = randint(1.5e5, 3e5)
+            timeout = randint(0.1e5, 4e5)
             timeout = 1.0*timeout/1e6
             time.sleep(timeout)
             if config[name]["object"]._serverState == candidateState:
@@ -48,7 +48,7 @@ def serverFunction(name):
 print "1. Start a new server"
 print "2. Kill a server: name"
 print "3. Resume a server: name"
-print "4. Send a message: sender receiver message"
+print "4. Client command: server, message_string"
 print "5. Initiate first election"
 
 thread = Thread(target=checkMesages, args=())
@@ -80,11 +80,9 @@ while(True):
         thread.start()
     elif args[0] == "4":
         sender = int(args[1])
-        receiver = int(args[2])
-        message_data = args[3]
-        if config[sender]["object"]._serverState != deadState and config[receiver]["object"]._serverState != deadState:
-            message = Message(sender, receiver, term, message_data, Message.AppendEntries)
-            config[receiver]["object"].post_message(message)
+        message_data = args[2]
+        server = config[sender]["object"]
+        server.on_client_command(message_data)
     elif args[0] == "5":
         for i in range(available_id):
             if config[i]["object"]._serverState == followerState:

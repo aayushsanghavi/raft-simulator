@@ -12,7 +12,6 @@ class Voter(State):
             self._send_vote_response_message(message)
         else:
             self._send_vote_response_message(message, yes=False)
-
         return self, None
 
     def _send_vote_response_message(self, msg, yes=True):

@@ -1,5 +1,6 @@
 from variables import *
 from leader import Leader
+from follower import Follower
 from message import Message
 
 class Server():
@@ -32,20 +33,38 @@ class Server():
         for n in self._neighbors:
             if n._serverState != deadState:
                 message._receiver = n._name
-                print message._sender, message._receiver, message._data, message._type
+                # print message._sender, message._receiver, message._data, message._type
                 n.post_message(message)
 
     def send_message_response(self, message):
         for n in self._neighbors:
             if n._name == message.receiver:
-                print message._sender, message._receiver, message._data, message._type
+                # print message._sender, message._receiver, message._data, message._type
                 n.post_message(message)
 
     def on_message(self, message):
         if (message._type == Message.RequestVoteResponse or message._type == Message.RequestVote) and type(self._state) == Leader:
+            return
+        if (message._type == Message.RequestVoteResponse) and type(self._state) == Follower:
             return
         state, response = self._state.on_message(message)
         if type(state) == Leader and type(self._state) != Leader:
             self._state = state
             self._state._send_heart_beat()
         self._state = state
+
+    def on_client_command(self, message_data):
+        """This is called when there is a client request."""
+        leader = None
+        leaderTerm = None
+        for n in self._neighbors:
+            if type(n._state) == Leader:
+                leader = n._name
+                leaderTerm = n._currentTerm
+        message = Message(self._name, leader, leaderTerm, {
+            "command": message_data,
+        }, Message.ClientCommand)
+        if leader != None:
+            self.send_message_response(message)
+        else:
+            self._state.run_client_command(message)

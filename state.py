@@ -14,8 +14,7 @@ class State(object):
         """
         _type = message.type
 
-
-        if(message.term > self._server._currentTerm):
+        if message.term > self._server._currentTerm:
             self._server._currentTerm = message.term
         # Is the messages.term < ours? If so we need to tell
         #   them this so they don't get left behind.
@@ -23,41 +22,34 @@ class State(object):
             self._send_response_message(message, yes=False)
             return self, None
 
-        if(_type == Message.AppendEntries):
+        if _type == Message.AppendEntries:
             return self.on_append_entries(message)
-        elif(_type == Message.RequestVote):
+        elif _type == Message.RequestVote:
             a = self.on_vote_request(message)
             return a
-        elif(_type == Message.RequestVoteResponse):
+        elif _type == Message.RequestVoteResponse:
             return self.on_vote_received(message)
-        elif(_type == Message.Response):
+        elif _type == Message.Response:
             return self.on_response_received(message)
+        elif _type == Message.ClientCommand:
+            return self.run_client_command(message)
 
     def on_leader_timeout(self, message):
-        print "calling 1"
         """This is called when the leader timeout is reached."""
 
     def on_vote_request(self, message):
-        print "calling 2"
         """This is called when there is a vote request."""
 
     def on_vote_received(self, message):
-        print "calling 3"
         """This is called when this node recieves a vote."""
 
     def on_append_entries(self, message):
-        print "calling 4"
         """This is called when there is a request to
         append an entry to the log.
 
         """
     def on_response_received(self, message):
-        print "calling 5"
         """This is called when a response is sent back to the Leader"""
-
-    def on_client_command(self, message):
-        print "calling 6"
-        """This is called when there is a client request."""
 
     def _nextTimeout(self):
         self._currentTime = time.time()
@@ -65,7 +57,6 @@ class State(object):
                                                     2 * self._timeout)
 
     def _send_response_message(self, msg, yes=True):
-        print "MADARCHOD"        
         response = Message(self._server._name, msg.sender, msg.term, {
             "response": yes,
             "currentTerm": self._server._currentTerm,
