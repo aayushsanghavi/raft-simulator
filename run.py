@@ -28,8 +28,7 @@ def serverFunction(name):
         print "Started server with name ", name
     elif config[name]["object"]._serverState == resumeState:
         print "Resumed server with name ", name
-        for message in config[name]["object"]._board:
-            print message._data
+        print config[name]["object"]._log:
         config[name]["object"]._serverState = followerState
 
     while(True):
@@ -48,8 +47,9 @@ def serverFunction(name):
 print "1. Start a new server"
 print "2. Kill a server: name"
 print "3. Resume a server: name"
-print "4. Client command: server, message_string"
+print "4. Client command: name, message_string"
 print "5. Initiate first election"
+print "6. Add junk value to log: name, message"
 
 thread = Thread(target=checkMesages, args=())
 thread.start()
@@ -87,3 +87,8 @@ while(True):
         for i in range(available_id):
             if config[i]["object"]._serverState == followerState:
                 config[i]["object"]._serverState = candidateState
+    elif args[0] == "6":
+        server = int(args[1])
+        message_data = args[2]
+        config[server]["object"]._log.append({"value": message_data, "term": term})
+        print config[server]["object"]._log

@@ -7,16 +7,16 @@ class Follower(Voter):
         self._timeoutTime = self._nextTimeout()
 
     def on_append_entries(self, message):
-        print message._data
+        # print message._data
         self._timeoutTime = self._nextTimeout()
 
-        if message.term < self._server._currentTerm:
+        if message._term < self._server._currentTerm:
             self._send_response_message(message, yes=False)
             return self, None
 
-        if(message.data != {}):
+        if message._data != {}:
             log = self._server._log
-            data = message.data
+            data = message._data
 
             # Check if the leader is too far ahead in the log.
             if data["leaderCommit"] != self._server._commitIndex:
@@ -34,7 +34,6 @@ class Follower(Voter):
             #   So, we make sure that the prevLogIndex term is always
             #   equal to the server.
             if len(log) > 0 and log[data["prevLogIndex"]]["term"] != data["prevLogTerm"]:
-
                 # There is a conflict we need to resync so delete everything
                 #   from this prevLogIndex and forward and send a failure
                 #   to the server.
@@ -49,22 +48,23 @@ class Follower(Voter):
             else:
                 # Make sure that leaderCommit is > 0 and that the
                 #   data is different here
-                if len(log) > 0 and data["leaderCommit"] > 0 and log[data["leaderCommit"]]["term"] != message.term:
-                    # Data was found to be different so we fix that
-                    #   by taking the current log and slicing it to the
-                    #   leaderCommit + 1 range then setting the last
-                    #   value to the commitValue
-                    log = log[:self._server._commitIndex]
-                    for e in data["entries"]:
-                        log.append(e)
-                        self._server._commitIndex += 1
-                    print log
+                if len(log) > 0 and len(log) > data["leaderCommit"]:
+                    if data["leaderCommit"] > 0 and log[data["leaderCommit"]]["term"] != message._term:
+                        # Data was found to be different so we fix that
+                        #   by taking the current log and slicing it to the
+                        #   leaderCommit + 1 range then setting the last
+                        #   value to the commitValue
+                        log = log[:self._server._commitIndex]
+                        for e in data["entries"]:
+                            log.append(e)
+                            self._server._commitIndex += 1
+                        print log
 
-                    self._send_response_message(message)
-                    self._server._lastLogIndex = len(log) - 1
-                    self._server._lastLogTerm = log[-1]["term"]
-                    self._commitIndex = len(log) - 1
-                    self._server._log = log
+                        self._send_response_message(message)
+                        self._server._lastLogIndex = len(log) - 1
+                        self._server._lastLogTerm = log[-1]["term"]
+                        self._commitIndex = len(log) - 1
+                        self._server._log = log
                 else:
                     # The commit index is not out of the range of the log
                     #   so we can just append it to the log now.

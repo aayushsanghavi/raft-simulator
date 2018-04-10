@@ -21,7 +21,7 @@ class Leader(State):
         self._server._lastLogIndex = max(len(self._server._log) - 1, 0)
         self._server._log.append(log)
         self._server._lastLogTerm = term
-
+        self._server._commitIndex = max(len(self._server._log) - 1, 0)
         message = Message(
             self._server._name,
             None,
