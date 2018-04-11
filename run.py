@@ -24,25 +24,27 @@ def checkMesages():
                         config[name]["object"].on_message(message)
 
 def serverFunction(name):
-    if config[name]["object"]._serverState == followerState:
+    server = config[name]["object"]
+    if server._serverState == followerState:
         print "Started server with name ", name
-    elif config[name]["object"]._serverState == resumeState:
+    elif server._serverState == resumeState:
         print "Resumed server with name ", name
-        print config[name]["object"]._log:
-        config[name]["object"]._serverState = followerState
+        print server._log
+        server._state.on_resume()
+        print server._log
+        server._serverState = followerState
 
     while(True):
-        if config[name]["object"]._serverState == deadState:
+        if server._serverState == deadState:
             print "Killed server with name ", name
             return
-        if config[name]["object"]._serverState == candidateState and type(config[name]["object"]._state) != Candidate:
+        if server._serverState == candidateState and type(server._state) != Candidate:
             timeout = randint(0.1e5, 4e5)
             timeout = 1.0*timeout/1e6
             time.sleep(timeout)
-            if config[name]["object"]._serverState == candidateState:
-                Server = config[name]["object"]
-                Server._state = Candidate()
-                Server._state.set_server(Server)
+            if server._serverState == candidateState:
+                server._state = Candidate()
+                server._state.set_server(server)
 
 print "1. Start a new server"
 print "2. Kill a server: name"
