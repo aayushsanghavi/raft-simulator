@@ -1,4 +1,5 @@
 from voter import Voter
+from leader import Leader
 
 class Follower(Voter):
     def __init__(self, timeout=500):
@@ -6,8 +7,15 @@ class Follower(Voter):
         self._timeout = timeout
         self._timeoutTime = self._nextTimeout()
 
+    def on_resume(self):
+        leader = None
+        for n in self._server._neighbors:
+            if type(n._state) == Leader:
+                leader = n
+        leader._state.send_pending_messages(self._server._name)
+
     def on_append_entries(self, message):
-        # print message._data
+        print message._data
         self._timeoutTime = self._nextTimeout()
 
         if message._term < self._server._currentTerm:
@@ -19,14 +27,14 @@ class Follower(Voter):
             data = message._data
 
             # Check if the leader is too far ahead in the log.
-            if data["leaderCommit"] != self._server._commitIndex:
-                # If the leader is too far ahead then we
-                #   use the length of the log - 1
-                self._server._commitIndex = min(data["leaderCommit"], len(log) - 1)
+            # if data["leaderCommit"] != self._server._commitIndex:
+            #     # If the leader is too far ahead then we
+            #     #   use the length of the log - 1
+            #     self._server._commitIndex = min(data["leaderCommit"], len(log) - 1)
 
             # Can't possibly be up-to-date with the log
             # If the log is smaller than the preLogIndex
-            if len(log) < data["prevLogIndex"]:
+            if (len(log) <= data["prevLogIndex"] and len(data["entries"])) and not (len(log) == 0 and len(data["entries"]) == 0):
                 self._send_response_message(message, yes=False)
                 return self, None
 
@@ -48,41 +56,41 @@ class Follower(Voter):
             else:
                 # Make sure that leaderCommit is > 0 and that the
                 #   data is different here
-                if len(log) > 0 and len(log) > data["leaderCommit"]:
-                    if data["leaderCommit"] > 0 and log[data["leaderCommit"]]["term"] != message._term:
-                        # Data was found to be different so we fix that
-                        #   by taking the current log and slicing it to the
-                        #   leaderCommit + 1 range then setting the last
-                        #   value to the commitValue
-                        log = log[:self._server._commitIndex]
-                        for e in data["entries"]:
-                            log.append(e)
-                            self._server._commitIndex += 1
-                        print log
+                # if len(log) > 0 and len(log) > data["leaderCommit"]:
+                #     if data["leaderCommit"] > 0 and log[data["leaderCommit"]]["term"] != message._term:
+                #         # Data was found to be different so we fix that
+                #         #   by taking the current log and slicing it to the
+                #         #   leaderCommit + 1 range then setting the last
+                #         #   value to the commitValue
+                #         log = log[:self._server._commitIndex]
+                #         for e in data["entries"]:
+                #             log.append(e)
+                #             self._server._commitIndex += 1
+                #         print log
 
-                        self._send_response_message(message)
-                        self._server._lastLogIndex = len(log) - 1
-                        self._server._lastLogTerm = log[-1]["term"]
-                        self._commitIndex = len(log) - 1
-                        self._server._log = log
-                else:
+                #         self._send_response_message(message)
+                #         self._server._lastLogIndex = len(log) - 1
+                #         self._server._lastLogTerm = log[-1]["term"]
+                #         self._commitIndex = len(log) - 1
+                #         self._server._log = log
+                # else:
                     # The commit index is not out of the range of the log
                     #   so we can just append it to the log now.
                     #   commitIndex = len(log)
                     #   Is this a heartbeat?
-                    if len(data["entries"]) > 0:
-                        for e in data["entries"]:
-                            log.append(e)
-                            self._server._commitIndex += 1
-                        print log
+                if len(data["entries"]) > 0:
+                    for e in data["entries"]:
+                        log.append(e)
+                        self._server._commitIndex += 1
+                    print log
 
-                        self._server._lastLogIndex = len(log) - 1
-                        self._server._lastLogTerm = log[-1]["term"]
-                        self._commitIndex = len(log) - 1
-                        self._server._log = log
-                        self._send_response_message(message)
+                    self._server._lastLogIndex = len(log) - 1
+                    self._server._lastLogTerm = log[-1]["term"]
+                    self._commitIndex = len(log) - 1
+                    self._server._log = log
+                    self._send_response_message(message)
 
-            self._send_response_message(message)
+            # self._send_response_message(message)
             return self, None
         else:
             return self, None

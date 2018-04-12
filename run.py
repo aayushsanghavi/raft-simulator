@@ -31,7 +31,6 @@ def serverFunction(name):
         print "Resumed server with name ", name
         print server._log
         server._state.on_resume()
-        print server._log
         server._serverState = followerState
 
     while(True):
@@ -39,7 +38,7 @@ def serverFunction(name):
             print "Killed server with name ", name
             return
         if server._serverState == candidateState and type(server._state) != Candidate:
-            timeout = randint(0.1e5, 4e5)
+            timeout = randint(0.1e5, 5e5)
             timeout = 1.0*timeout/1e6
             time.sleep(timeout)
             if server._serverState == candidateState:

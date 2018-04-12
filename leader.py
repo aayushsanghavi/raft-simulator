@@ -14,6 +14,30 @@ class Leader(State):
             self._nextIndexes[n._name] = self._server._lastLogIndex + 1
             self._matchIndex[n._name] = 0
 
+    def send_pending_messages(self, server):
+        entries = []
+        # nextIndex = self._nextIndexes[server]
+        # print nextIndex, "next"
+        # for i in range(nextIndex, len(self._server._log)):
+        #     entries.append(self._server._log[i])
+        # print server, entries
+        log = self._server._log
+        if len(log) == 0:
+            return
+        self._nextIndexes[server] = max(len(log) - 1, 0)
+        message = Message(
+            self._server._name,
+            server,
+            self._server._currentTerm,
+            {
+                "leaderId": self._server._name,
+                "prevLogIndex": max(len(log) - 2, 0),
+                "prevLogTerm": self._server._lastLogTerm,
+                "entries": [log[- 1]],
+                "leaderCommit": max(len(log) - 1, 0),
+            }, Message.AppendEntries)
+        self._server.send_message_response(message)
+
     def run_client_command(self, message):
         term = self._server._currentTerm
         value = message._data["command"]
@@ -41,12 +65,10 @@ class Leader(State):
         if not message.data["response"]:
             # No, so lets back up the log for this node
             self._nextIndexes[message.sender] -= 1
-
             # Get the next log entry to send to the client.
-            previousIndex = max(0, self._nextIndexes[message.sender] - 1)
+            previousIndex = max(0, self._nextIndexes[message._sender] - 1)
             previous = self._server._log[previousIndex]
-            current = self._server._log[self._nextIndexes[message.sender]]
-
+            current = self._server._log[self._nextIndexes[message._sender]:]
             # Send the new log to the client and wait for it to respond.
             appendEntry = Message(
                 self._server._name,
@@ -56,11 +78,11 @@ class Leader(State):
                     "leaderId": self._server._name,
                     "prevLogIndex": previousIndex,
                     "prevLogTerm": previous["term"],
-                    "entries": [current],
+                    "entries": current,
                     "leaderCommit": self._server._commitIndex,
                 }, Message.AppendEntries)
 
-            self._send_response_message(appendEntry)
+            self._server.send_message_response(appendEntry)
         else:
             # The last append was good so increase their index.
             self._nextIndexes[message.sender] += 1
