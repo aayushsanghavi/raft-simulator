@@ -34,13 +34,13 @@ class Follower(Voter):
 
             # Can't possibly be up-to-date with the log
             # If the log is smaller than the preLogIndex
-            if (len(log) <= data["prevLogIndex"] and len(data["entries"])) and not (len(log) == 0 and len(data["entries"]) == 0):
+            if data["prevLogIndex"] > -1 and len(log) <= data["prevLogIndex"]:
                 self._send_response_message(message, yes=False)
                 return self, None
 
             # We need to hold the induction proof of the algorithm here.
             #   So, we make sure that the prevLogIndex term is always
-            #   equal to the server.
+            #   equal to the server
             if len(log) > 0 and log[data["prevLogIndex"]]["term"] != data["prevLogTerm"]:
                 # There is a conflict we need to resync so delete everything
                 #   from this prevLogIndex and forward and send a failure

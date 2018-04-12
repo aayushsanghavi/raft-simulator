@@ -24,14 +24,14 @@ class Leader(State):
         log = self._server._log
         if len(log) == 0:
             return
-        self._nextIndexes[server] = max(len(log) - 1, 0)
+        self._nextIndexes[server] = len(log) - 1
         message = Message(
             self._server._name,
             server,
             self._server._currentTerm,
             {
                 "leaderId": self._server._name,
-                "prevLogIndex": max(len(log) - 2, 0),
+                "prevLogIndex": len(log) - 2,
                 "prevLogTerm": self._server._lastLogTerm,
                 "entries": [log[- 1]],
                 "leaderCommit": max(len(log) - 1, 0),
@@ -42,7 +42,7 @@ class Leader(State):
         term = self._server._currentTerm
         value = message._data["command"]
         log = {"term": term, "value": value}
-        self._server._lastLogIndex = max(len(self._server._log) - 1, 0)
+        self._server._lastLogIndex = len(self._server._log) - 1
         self._server._log.append(log)
         self._server._lastLogTerm = term
         self._server._commitIndex = max(len(self._server._log) - 1, 0)
@@ -65,8 +65,8 @@ class Leader(State):
         if not message.data["response"]:
             # No, so lets back up the log for this node
             self._nextIndexes[message.sender] -= 1
-            # Get the next log entry to send to the client.
-            previousIndex = max(0, self._nextIndexes[message._sender] - 1)
+            # Get the next log entry to send to the client
+            previousIndex = self._nextIndexes[message._sender] - 1
             previous = self._server._log[previousIndex]
             current = self._server._log[self._nextIndexes[message._sender]:]
             # Send the new log to the client and wait for it to respond.
@@ -85,11 +85,11 @@ class Leader(State):
             self._server.send_message_response(appendEntry)
         else:
             # The last append was good so increase their index.
-            self._nextIndexes[message.sender] += 1
+            self._nextIndexes[message._sender] += 1
 
             # Are they caught up?
-            if self._nextIndexes[message.sender] > self._server._lastLogIndex:
-                self._nextIndexes[message.sender] = self._server._lastLogIndex
+            if self._nextIndexes[message._sender] > self._server._lastLogIndex:
+                self._nextIndexes[message._sender] = self._server._lastLogIndex
 
         return self, None
 

@@ -14,7 +14,7 @@ class Server():
         self._commitIndex = 0
         self._currentTerm = 0
         self._lastApplied = 0
-        self._lastLogIndex = 0
+        self._lastLogIndex = -1
         self._lastLogTerm = None
         self._serverState = followerState
         self._state.set_server(self)
