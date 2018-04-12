@@ -3,6 +3,7 @@ from variables import *
 from server import Server
 from random import randint
 from follower import Follower
+from leader import Leader
 from threading import Thread
 from message import Message
 from candidate import Candidate
@@ -34,6 +35,7 @@ def serverFunction(name):
         server._serverState = followerState
 
     while(True):
+        time.sleep(0.0001)
         if server._serverState == deadState:
             print "Killed server with name ", name
             return
@@ -62,10 +64,15 @@ while(True):
         state = Follower()
         server = Server(available_id, state, [], [])
         server._total_nodes = available_id + 1
+        isLeader = 0
         for i in range(available_id):
             server._neighbors.append(config[i]["object"])
+            if type(config[i]["object"]._state) == Leader:
+                isLeader = 1
             config[i]["object"]._total_nodes = available_id + 1
             config[i]["object"]._neighbors.append(server)
+        if isLeader:
+            server._state.on_resume()
 
         thread = Thread(target=serverFunction, args=(available_id,))
         config[available_id] = {"object": server}
