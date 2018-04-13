@@ -2,7 +2,7 @@ from voter import Voter
 from leader import Leader
 
 class Follower(Voter):
-    def __init__(self, timeout=500):
+    def __init__(self, timeout=1):
         Voter.__init__(self)
         self._timeout = timeout
         self._timeoutTime = self._nextTimeout()
@@ -15,7 +15,7 @@ class Follower(Voter):
         leader._state.send_pending_messages(self._server._name)
 
     def on_append_entries(self, message):
-        # print message._data
+        print message._data
         self._timeoutTime = self._nextTimeout()
 
         if message._term < self._server._currentTerm:

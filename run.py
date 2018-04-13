@@ -35,6 +35,11 @@ def serverFunction(name):
         server._serverState = followerState
 
     while(True):
+        if type(server._state) == Leader:
+            if time.time() >= server._state._timeoutTime:
+                print "sending heart beat"
+                server._state._send_heart_beat()
+
         time.sleep(0.0001)
         if server._serverState == deadState:
             print "Killed server with name ", name

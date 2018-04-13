@@ -11,12 +11,13 @@ class Server():
         self._board = []
         self._neighbors = neighbors
         self._total_nodes = 0
-        self._commitIndex = 0
+        self._commitIndex = -1
         self._currentTerm = 0
         self._lastApplied = 0
         self._lastLogIndex = -1
         self._lastLogTerm = None
         self._serverState = followerState
+        self.X = 0
         self._state.set_server(self)
 
     def post_message(self, message):

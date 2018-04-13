@@ -3,9 +3,12 @@ from state import State
 from message import Message
 
 class Leader(State):
-    def __init__(self):
+    def __init__(self, timeout=5):
+        self._timeout = timeout
         self._nextIndexes = defaultdict(int)
         self._matchIndex = defaultdict(int)
+        self._ackCount = defaultdict(int)
+        self._timeoutTime = self._nextTimeout()
 
     def set_server(self, server):
         self._server = server
@@ -32,9 +35,9 @@ class Leader(State):
             {
                 "leaderId": self._server._name,
                 "prevLogIndex": len(log) - 2,
-                "prevLogTerm": self._server._lastLogTerm,
-                "entries": [log[- 1]],
-                "leaderCommit": max(len(log) - 1, 0),
+                "prevLogTerm": self._server._currentTerm,
+                "entries": [log[-1]],
+                "leaderCommit": self._server._commitIndex,
             }, Message.AppendEntries)
         self._server.send_message_response(message)
 
@@ -45,7 +48,7 @@ class Leader(State):
         self._server._lastLogIndex = len(self._server._log) - 1
         self._server._log.append(log)
         self._server._lastLogTerm = term
-        self._server._commitIndex = max(len(self._server._log) - 1, 0)
+        # self._server._commitIndex = max(len(self._server._log) - 1, 0)
         message = Message(
             self._server._name,
             None,
@@ -53,7 +56,7 @@ class Leader(State):
             {
                 "leaderId": self._server._name,
                 "prevLogIndex": self._server._lastLogIndex,
-                "prevLogTerm": self._server._lastLogTerm,
+                "prevLogTerm": self._server._currentTerm,
                 "entries": [log],
                 "leaderCommit": self._server._commitIndex,
             }, Message.AppendEntries)
@@ -86,6 +89,12 @@ class Leader(State):
         else:
             # The last append was good so increase their index.
             self._nextIndexes[message._sender] += 1
+            index = self._nextIndexes[message._sender] - 1
+            self._ackCount[index] += 1
+            print "total", (self._server._total_nodes + 1) / 2, self._ackCount[index]
+            if self._ackCount[index] == (self._server._total_nodes + 1) / 2:
+                self._server._commitIndex += 1
+                print "committed", self._server._commitIndex
 
             # Are they caught up?
             if self._nextIndexes[message._sender] > self._server._lastLogIndex:
@@ -94,6 +103,8 @@ class Leader(State):
         return self, None
 
     def _send_heart_beat(self):
+        self._timeoutTime = self._nextTimeout()
+        self._server._lastLogIndex = len(self._server._log) - 1
         message = Message(
             self._server._name,
             None,

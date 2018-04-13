@@ -53,8 +53,7 @@ class State(object):
 
     def _nextTimeout(self):
         self._currentTime = time.time()
-        return self._currentTime + random.randrange(self._timeout,
-                                                    2 * self._timeout)
+        return self._currentTime + self._timeout
 
     def _send_response_message(self, msg, yes=True):
         response = Message(self._server._name, msg.sender, msg.term, {
