@@ -19,11 +19,6 @@ class Leader(State):
 
     def send_pending_messages(self, server):
         entries = []
-        # nextIndex = self._nextIndexes[server]
-        # print nextIndex, "next"
-        # for i in range(nextIndex, len(self._server._log)):
-        #     entries.append(self._server._log[i])
-        # print server, entries
         log = self._server._log
         if len(log) == 0:
             return
@@ -48,7 +43,6 @@ class Leader(State):
         self._server._lastLogIndex = len(self._server._log) - 1
         self._server._log.append(log)
         self._server._lastLogTerm = term
-        # self._server._commitIndex = max(len(self._server._log) - 1, 0)
         message = Message(
             self._server._name,
             None,
@@ -64,15 +58,11 @@ class Leader(State):
         return self, None
 
     def on_response_received(self, message):
-        # Was the last AppendEntries good?
         if not message.data["response"]:
-            # No, so lets back up the log for this node
             self._nextIndexes[message.sender] -= 1
-            # Get the next log entry to send to the client
             previousIndex = self._nextIndexes[message._sender] - 1
             previous = self._server._log[previousIndex]
             current = self._server._log[self._nextIndexes[message._sender]:]
-            # Send the new log to the client and wait for it to respond.
             appendEntry = Message(
                 self._server._name,
                 message.sender,
@@ -87,7 +77,6 @@ class Leader(State):
 
             self._server.send_message_response(appendEntry)
         else:
-            # The last append was good so increase their index.
             self._nextIndexes[message._sender] += 1
             index = self._nextIndexes[message._sender] - 1
             self._ackCount[index] += 1
@@ -96,7 +85,6 @@ class Leader(State):
                 self._server._commitIndex += 1
                 print "committed", self._server._commitIndex
 
-            # Are they caught up?
             if self._nextIndexes[message._sender] > self._server._lastLogIndex:
                 self._nextIndexes[message._sender] = self._server._lastLogIndex
 

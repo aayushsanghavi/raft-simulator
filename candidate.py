@@ -16,11 +16,7 @@ class Candidate(Voter):
 
     def on_vote_received(self, message):
         self._votes[message.sender] = message
-
-        # print "Total nodes = ", self._server._total_nodes
-        # print "Total votes = ", len(self._votes.keys())
-
-        if(len(self._votes.keys()) > (self._server._total_nodes - 1) / 2):
+        if len(self._votes.keys()) > (self._server._total_nodes - 1) / 2:
             leader = Leader()
             leader.set_server(self._server)
             print "Server", self._server._name, "has been elected leader"

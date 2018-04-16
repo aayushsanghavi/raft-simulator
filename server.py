@@ -5,6 +5,7 @@ from message import Message
 
 class Server():
     def __init__(self, name, state, log, neighbors):
+        self.X = 0
         self._name = name
         self._state = state
         self._log = log
@@ -17,7 +18,6 @@ class Server():
         self._lastLogIndex = -1
         self._lastLogTerm = None
         self._serverState = followerState
-        self.X = 0
         self._state.set_server(self)
 
     def post_message(self, message):
@@ -34,13 +34,11 @@ class Server():
         for n in self._neighbors:
             if n._serverState != deadState:
                 message._receiver = n._name
-                # print message._sender, message._receiver, message._data, message._type
                 n.post_message(message)
 
     def send_message_response(self, message):
         for n in self._neighbors:
             if n._name == message.receiver:
-                # print message._sender, message._receiver, message._data, message._type
                 n.post_message(message)
 
     def on_message(self, message):
