@@ -1,6 +1,6 @@
-from collections import defaultdict
 from state import State
 from message import Message
+from collections import defaultdict
 
 class Leader(State):
     def __init__(self, timeout=5):
@@ -9,6 +9,7 @@ class Leader(State):
         self._matchIndex = defaultdict(int)
         self._ackCount = defaultdict(int)
         self._timeoutTime = self._nextTimeout()
+        self._numofMessages = {}
 
     def set_server(self, server):
         self._server = server
@@ -43,6 +44,9 @@ class Leader(State):
         self._server._lastLogIndex = len(self._server._log) - 1
         self._server._log.append(log)
         self._server._lastLogTerm = term
+        for n in self._server._neighbors:
+            self._numofMessages[n._name] = 1
+
         message = Message(
             self._server._name,
             None,
@@ -63,9 +67,10 @@ class Leader(State):
             previousIndex = self._nextIndexes[message._sender] - 1
             previous = self._server._log[previousIndex]
             current = self._server._log[self._nextIndexes[message._sender]:]
+            self._numofMessages[message._sender] = len(current)
             appendEntry = Message(
                 self._server._name,
-                message.sender,
+                message._sender,
                 self._server._currentTerm,
                 {
                     "leaderId": self._server._name,
@@ -77,16 +82,20 @@ class Leader(State):
 
             self._server.send_message_response(appendEntry)
         else:
-            self._nextIndexes[message._sender] += 1
-            index = self._nextIndexes[message._sender] - 1
-            self._ackCount[index] += 1
-            print "total", (self._server._total_nodes + 1) / 2, self._ackCount[index]
-            if self._ackCount[index] == (self._server._total_nodes + 1) / 2:
-                self._server._commitIndex += 1
-                print "committed", self._server._commitIndex
+            index = self._nextIndexes[message._sender]
+            lastIndex = index + self._numofMessages[message._sender] - 1
+            self._nextIndexes[message._sender] += self._numofMessages[message._sender]
+            print "index", index, self._ackCount[index]
 
-            if self._nextIndexes[message._sender] > self._server._lastLogIndex:
-                self._nextIndexes[message._sender] = self._server._lastLogIndex
+            for i in range(lastIndex, index-1, -1):
+                self._ackCount[i] += 1
+                if self._ackCount[i] == (self._server._total_nodes + 1) / 2:
+                    if i > self._server._commitIndex:
+                        for j in range(self._server._commitIndex+1, i+1):
+                            self._server._x += int(self._server._log[j]["value"])
+                        self._server._commitIndex = i
+                    print "committed", self._server._commitIndex
+                    break
 
         return self, None
 

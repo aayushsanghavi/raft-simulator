@@ -15,7 +15,12 @@ class Follower(Voter):
         leader._state.send_pending_messages(self._server._name)
 
     def on_append_entries(self, message):
+        for j in range(self._server._commitIndex+1, min(message._data["leaderCommit"]+1, len(self._server._log))):
+            self._server._x += int(self._server._log[j]["value"])
+
+        self._server._commitIndex = min(message._data["leaderCommit"], len(self._server._log)-1)
         print message._data
+        print self._server._x
         self._timeoutTime = self._nextTimeout()
 
         if message._term < self._server._currentTerm:
@@ -39,13 +44,11 @@ class Follower(Voter):
             else:
                 if len(data["entries"]) > 0:
                     for e in data["entries"]:
-                        log.append(e)
-                        self._server._commitIndex += 1
+                        log.append(e)                        
                     print log
 
                     self._server._lastLogIndex = len(log) - 1
                     self._server._lastLogTerm = log[-1]["term"]
-                    self._commitIndex = len(log) - 1
                     self._server._log = log
                     self._send_response_message(message)
 

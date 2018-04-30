@@ -5,7 +5,7 @@ from message import Message
 
 class Server():
     def __init__(self, name, state, log, neighbors):
-        self.X = 0
+        self._x = 0
         self._name = name
         self._state = state
         self._log = log
