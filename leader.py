@@ -3,7 +3,7 @@ from message import Message
 from collections import defaultdict
 
 class Leader(State):
-    def __init__(self, timeout=5):
+    def __init__(self, timeout=0.5):
         self._timeout = timeout
         self._nextIndexes = defaultdict(int)
         self._matchIndex = defaultdict(int)
@@ -42,8 +42,10 @@ class Leader(State):
         value = message._data["command"]
         log = {"term": term, "value": value}
         self._server._lastLogIndex = len(self._server._log) - 1
-        self._server._log.append(log)
         self._server._lastLogTerm = term
+        if self._server._lastLogIndex > -1:
+            self._server._lastLogTerm = self._server._log[self._server._lastLogIndex]
+        self._server._log.append(log)
         for n in self._server._neighbors:
             self._numofMessages[n._name] = 1
 
@@ -54,7 +56,7 @@ class Leader(State):
             {
                 "leaderId": self._server._name,
                 "prevLogIndex": self._server._lastLogIndex,
-                "prevLogTerm": self._server._currentTerm,
+                "prevLogTerm": self._server._lastLogTerm,
                 "entries": [log],
                 "leaderCommit": self._server._commitIndex,
             }, Message.AppendEntries)

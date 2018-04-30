@@ -12,7 +12,8 @@ class Follower(Voter):
         for n in self._server._neighbors:
             if type(n._state) == Leader:
                 leader = n
-        leader._state.send_pending_messages(self._server._name)
+        if leader is not None:
+            leader._state.send_pending_messages(self._server._name)
 
     def on_append_entries(self, message):
         for j in range(self._server._commitIndex+1, min(message._data["leaderCommit"]+1, len(self._server._log))):
@@ -26,6 +27,7 @@ class Follower(Voter):
         if message._term < self._server._currentTerm:
             self._send_response_message(message, yes=False)
             return self, None
+        self._server._currentTerm = message._term
 
         if message._data != {}:
             log = self._server._log

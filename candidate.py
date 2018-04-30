@@ -1,4 +1,5 @@
 import time
+from random import randint
 from variables import *
 from voter import Voter
 from leader import Leader
@@ -16,7 +17,8 @@ class Candidate(Voter):
 
     def on_vote_received(self, message):
         self._votes[message.sender] = message
-        if len(self._votes.keys()) > (self._server._total_nodes - 1) / 2:
+        print self._votes.keys()
+        if len(self._votes.keys()) >= (self._server._total_nodes - 1) / 2:
             leader = Leader()
             leader.set_server(self._server)
             print "Server", self._server._name, "has been elected leader"
@@ -31,6 +33,9 @@ class Candidate(Voter):
         return self, None
 
     def _start_election(self):
+        print self._server._name, "Starting election"
+        self._timeoutTime = time.time() + (randint(1e6, 2e6)*1.0)/1e6
+        self._votes = {}
         self._server._currentTerm += 1
         election = Message(
             self._server._name,

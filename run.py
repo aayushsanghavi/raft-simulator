@@ -31,19 +31,35 @@ def serverFunction(name):
     elif server._serverState == resumeState:
         print "Resumed server with name ", name
         print server._log
+        server._state = Follower()
+        server._state.set_server(server)
         server._state.on_resume()
         server._serverState = followerState
 
     while(True):
         if type(server._state) == Leader:
             if time.time() >= server._state._timeoutTime:
-                print "sending heart beat"
+                print "Sending heart beat"
                 server._state._send_heart_beat()
+
+        if type(server._state) == Candidate and time.time() >= server._state._timeoutTime:
+            print "back to follower"
+            server._state = Follower()
+            server._state.set_server(server)
+
+        if type(server._state) == Follower and term >= 1:
+            if time.time() >= server._state._timeoutTime:
+                print "Leader is dead"
+                server._serverState = candidateState
 
         time.sleep(0.0001)
         if server._serverState == deadState:
             print "Killed server with name ", name
+            server._state = Follower()
+            server._state.set_server(server)
+            # server._serverState = followerState
             return
+
         if server._serverState == candidateState and type(server._state) != Candidate:
             timeout = randint(0.1e5, 5e5)
             timeout = 1.0*timeout/1e6
@@ -97,6 +113,7 @@ while(True):
         server = config[sender]["object"]
         server.on_client_command(message_data)
     elif args[0] == "5":
+        term += 1
         for i in range(available_id):
             if config[i]["object"]._serverState == followerState:
                 config[i]["object"]._serverState = candidateState
