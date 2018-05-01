@@ -19,11 +19,11 @@ class Follower(Voter):
         for j in range(self._server._commitIndex+1, min(message._data["leaderCommit"]+1, len(self._server._log))):
             self._server._x += int(self._server._log[j]["value"])
 
-        self._server._commitIndex = min(message._data["leaderCommit"], len(self._server._log)-1)
-        print message._data
-        print self._server._x
-        self._timeoutTime = self._nextTimeout()
+        if message._data["leaderCommit"] > self._server._commitIndex:
+            self._server._commitIndex = min(message._data["leaderCommit"], len(self._server._log)-1)
+            print "State machine of", self._server._name, self._server._x
 
+        self._timeoutTime = self._nextTimeout()
         if message._term < self._server._currentTerm:
             self._send_response_message(message, yes=False)
             return self, None
@@ -46,7 +46,7 @@ class Follower(Voter):
             else:
                 if len(data["entries"]) > 0:
                     for e in data["entries"]:
-                        log.append(e)                        
+                        log.append(e)
                     print log
 
                     self._server._lastLogIndex = len(log) - 1

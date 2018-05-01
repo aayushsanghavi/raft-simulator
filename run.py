@@ -30,6 +30,7 @@ def serverFunction(name):
         print "Started server with name ", name
     elif server._serverState == resumeState:
         print "Resumed server with name ", name
+        print server._commitIndex
         print server._log
         server._state = Follower()
         server._state.set_server(server)
@@ -39,25 +40,23 @@ def serverFunction(name):
     while(True):
         if type(server._state) == Leader:
             if time.time() >= server._state._timeoutTime:
-                print "Sending heart beat"
                 server._state._send_heart_beat()
 
         if type(server._state) == Candidate and time.time() >= server._state._timeoutTime:
-            print "back to follower"
             server._state = Follower()
             server._state.set_server(server)
 
         if type(server._state) == Follower and term >= 1:
             if time.time() >= server._state._timeoutTime:
-                print "Leader is dead"
+                print server._name, "finds that the leader is dead"
                 server._serverState = candidateState
 
         time.sleep(0.0001)
         if server._serverState == deadState:
-            print "Killed server with name ", name
+            print "Killed server with name", name
             server._state = Follower()
             server._state.set_server(server)
-            # server._serverState = followerState
+            print server._commitIndex
             return
 
         if server._serverState == candidateState and type(server._state) != Candidate:
@@ -73,7 +72,6 @@ print "2. Kill a server: name"
 print "3. Resume a server: name"
 print "4. Client command: name, message_string"
 print "5. Initiate first election"
-print "6. Add junk value to log: name, message"
 
 thread = Thread(target=checkMesages, args=())
 thread.start()
@@ -113,12 +111,7 @@ while(True):
         server = config[sender]["object"]
         server.on_client_command(message_data)
     elif args[0] == "5":
-        term += 1
         for i in range(available_id):
             if config[i]["object"]._serverState == followerState:
                 config[i]["object"]._serverState = candidateState
-    elif args[0] == "6":
-        server = int(args[1])
-        message_data = args[2]
-        config[server]["object"]._log.append({"value": message_data, "term": term})
-        print config[server]["object"]._log
+        term = 1

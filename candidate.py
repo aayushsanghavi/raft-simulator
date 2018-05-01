@@ -17,7 +17,6 @@ class Candidate(Voter):
 
     def on_vote_received(self, message):
         self._votes[message.sender] = message
-        print self._votes.keys()
         if len(self._votes.keys()) >= (self._server._total_nodes - 1) / 2:
             leader = Leader()
             leader.set_server(self._server)
@@ -33,7 +32,7 @@ class Candidate(Voter):
         return self, None
 
     def _start_election(self):
-        print self._server._name, "Starting election"
+        print self._server._name, "is starting election"
         self._timeoutTime = time.time() + (randint(1e6, 2e6)*1.0)/1e6
         self._votes = {}
         self._server._currentTerm += 1

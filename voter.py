@@ -7,7 +7,6 @@ class Voter(State):
 
     def on_vote_request(self, message):
         if message._term not in self._last_vote and (message._data["lastLogTerm"], message._data["lastLogIndex"]) >= (self._server._lastLogTerm, self._server._lastLogIndex):
-            print "OK"
             self._last_vote[message._term] = message.sender
             self._send_vote_response_message(message)
         else:
